@@ -1,0 +1,34 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.egg-info/
+dist/
+build/
+
+# uv
+.venv/
+.uv/
+
+# Django
+*.log
+local_settings.py
+db.sqlite3
+media/
+
+# NumPy memmap cache
+*.npy
+*.dat
+
+# Environment
+.env
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
