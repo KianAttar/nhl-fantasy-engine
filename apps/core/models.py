@@ -137,6 +137,14 @@ class SkaterScoringRule(models.Model):
         return f"skater.{self.stat_name} = {self.points_per_unit}pts"
 
 
+class PipelineControl(models.Model):
+    """No DB table — exists solely to anchor the Pipeline Control admin page."""
+    class Meta:
+        managed = False
+        verbose_name = "Pipeline Control"
+        verbose_name_plural = "Pipeline Control"
+
+
 class GoalieScoringRule(models.Model):
     """Fantasy point weight for a goalie stat. Stored in DB so scoring can change without a deploy."""
 

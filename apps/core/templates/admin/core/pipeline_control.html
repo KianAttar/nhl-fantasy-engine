@@ -1,0 +1,103 @@
+{% extends "admin/base_site.html" %}
+{% load i18n %}
+
+{% block content_title %}<h1>Pipeline Control</h1>{% endblock %}
+
+{% block content %}
+<div id="content-main">
+
+  {# ── DB snapshot ─────────────────────────────────────────────────────── #}
+  <div class="module">
+    <h2>Database Snapshot</h2>
+    <table>
+      <tbody>
+        <tr><th>Teams</th><td>{{ stats.teams }}</td></tr>
+        <tr><th>Players</th><td>{{ stats.players }}</td></tr>
+        <tr><th>Games (total)</th><td>{{ stats.games }}</td></tr>
+        <tr><th>Games (final)</th><td>{{ stats.games_final }}</td></tr>
+        <tr><th>Skater stat rows</th><td>{{ stats.skater_stats }}</td></tr>
+        <tr><th>Goalie stat rows</th><td>{{ stats.goalie_stats }}</td></tr>
+        <tr><th>Last ingested date</th><td>{{ stats.last_game_date|default:"—" }}</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  {# ── Run pipeline ────────────────────────────────────────────────────── #}
+  <div class="module">
+    <h2>Run Pipeline</h2>
+    <p style="color:#666; margin: 0 0 12px 0;">
+      Requires a running Celery worker. Tasks are queued and executed asynchronously.
+    </p>
+    <form method="post">
+      {% csrf_token %}
+      <div style="display:flex; align-items:center; gap:12px; padding:10px 0;">
+        <label for="date"><strong>Date:</strong></label>
+        <input type="date" name="date" id="date" required
+               value="{{ today }}"
+               style="padding:4px 8px; border:1px solid #ccc; border-radius:4px;">
+        <button type="submit" name="action" value="ingest"
+                class="button">
+          Ingest Only
+        </button>
+        <button type="submit" name="action" value="score"
+                class="button">
+          Score Only
+        </button>
+        <button type="submit" name="action" value="full_pipeline"
+                class="button default">
+          Full Pipeline
+        </button>
+      </div>
+    </form>
+    <p style="color:#888; font-size:0.85em;">
+      <strong>Ingest Only</strong> — fetch game stats from the NHL API and write to DB.<br>
+      <strong>Score Only</strong> — recalculate fantasy points for games already in DB.<br>
+      <strong>Full Pipeline</strong> — ingest then score in a single chained task.
+    </p>
+  </div>
+
+  {# ── Recent task history ─────────────────────────────────────────────── #}
+  <div class="module">
+    <h2>
+      Recent Task Results
+      <a href="{% url 'admin:django_celery_results_taskresult_changelist' %}"
+         style="font-size:0.75em; font-weight:normal; margin-left:10px;">
+        view all →
+      </a>
+    </h2>
+    {% if recent_tasks %}
+    <table>
+      <thead>
+        <tr>
+          <th>Task</th>
+          <th>Status</th>
+          <th>Date Done</th>
+          <th>Worker</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for t in recent_tasks %}
+        <tr>
+          <td>{{ t.task_name }}</td>
+          <td>
+            {% if t.status == "SUCCESS" %}
+              <span style="color:green;">{{ t.status }}</span>
+            {% elif t.status == "FAILURE" %}
+              <span style="color:red;">{{ t.status }}</span>
+            {% else %}
+              {{ t.status }}
+            {% endif %}
+          </td>
+          <td>{{ t.date_done|default:"—" }}</td>
+          <td style="color:#888; font-size:0.85em;">{{ t.worker|default:"—" }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p style="color:#888;">No task results yet. Run the pipeline to see history here.</p>
+    {% endif %}
+  </div>
+
+</div>
+{% endblock %}
