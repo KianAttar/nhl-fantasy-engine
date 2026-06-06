@@ -3,6 +3,7 @@ from datetime import date, datetime
 from django.core.management.base import BaseCommand, CommandError
 
 from apps.core.models import Game
+from apps.core.services.cache_utils import invalidate_leaderboard, warm_leaderboard
 from apps.core.services.scoring import score_goalies, score_skaters
 
 
@@ -41,3 +42,9 @@ class Command(BaseCommand):
         self.stdout.write("Scoring goalies...")
         goalie_count = score_goalies(game_ids)
         self.stdout.write(self.style.SUCCESS(f"  Updated {goalie_count} goalie rows."))
+
+        date_str = options["date"]
+        self.stdout.write("Invalidating and warming leaderboard cache...")
+        invalidate_leaderboard(date_str)
+        warm_leaderboard(date_str)
+        self.stdout.write(self.style.SUCCESS("  Cache ready."))
