@@ -16,7 +16,37 @@ from django.conf import settings
 from django.contrib.auth.models import User
 if settings.DEBUG and not User.objects.filter(username='admin').exists():
     User.objects.create_superuser('admin', 'admin@example.com', 'admin')
-    print('Dev admin created — login: admin / admin')
+"
+
+# Print dev banner
+python manage.py shell -c "
+from django.conf import settings
+if settings.DEBUG:
+    print('')
+    print('  ================================================')
+    print('   NHL Fantasy Engine — dev server ready')
+    print('  ================================================')
+    print('')
+    print('   Admin dashboard')
+    print('     http://localhost:8000/admin/')
+    print('     username: admin')
+    print('     password: admin')
+    print('')
+    print('   API endpoints')
+    print('     Leaderboard (all-time):')
+    print('       http://localhost:8000/api/leaderboard/')
+    print('')
+    print('     Leaderboard (single day):')
+    print('       http://localhost:8000/api/leaderboard/?date=YYYY-MM-DD')
+    print('')
+    print('     Leaderboard (custom page size, max 200):')
+    print('       http://localhost:8000/api/leaderboard/?page_size=100')
+    print('')
+    print('     Player stats:')
+    print('       http://localhost:8000/api/players/{id}/stats/')
+    print('')
+    print('  ================================================')
+    print('')
 "
 
 exec "$@"
