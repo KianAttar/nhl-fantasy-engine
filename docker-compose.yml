@@ -23,9 +23,7 @@ services:
 
   web:
     build: .
-    command: >
-      sh -c "python manage.py migrate &&
-             gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers 4 --timeout 60"
+    command: ["gunicorn", "config.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "4", "--timeout", "60"]
     ports:
       - "8000:8000"
     env_file: .env
@@ -33,6 +31,7 @@ services:
       DATABASE_URL: postgres://nhl:nhl@postgres:5432/nhl_fantasy
       REDIS_URL: redis://redis:6379/0
       CACHE_URL: redis://redis:6379/1
+      DEBUG: "False"
     depends_on:
       postgres:
         condition: service_healthy
@@ -46,12 +45,13 @@ services:
 
   worker:
     build: .
-    command: celery -A config worker --loglevel=info --concurrency=2
+    command: ["celery", "-A", "config", "worker", "--loglevel=info", "--concurrency=2"]
     env_file: .env
     environment:
       DATABASE_URL: postgres://nhl:nhl@postgres:5432/nhl_fantasy
       REDIS_URL: redis://redis:6379/0
       CACHE_URL: redis://redis:6379/1
+      DEBUG: "False"
     depends_on:
       postgres:
         condition: service_healthy
@@ -60,14 +60,13 @@ services:
 
   beat:
     build: .
-    command: >
-      sh -c "python manage.py setup_schedule &&
-             celery -A config beat --loglevel=info"
+    command: ["sh", "-c", "python manage.py setup_schedule && celery -A config beat --loglevel=info"]
     env_file: .env
     environment:
       DATABASE_URL: postgres://nhl:nhl@postgres:5432/nhl_fantasy
       REDIS_URL: redis://redis:6379/0
       CACHE_URL: redis://redis:6379/1
+      DEBUG: "False"
     depends_on:
       postgres:
         condition: service_healthy

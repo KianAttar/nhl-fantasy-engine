@@ -35,9 +35,49 @@ GET /api/players/{id}/stats/
 
 ---
 
-## Running locally (no Docker)
+## Running in development (single Docker command)
 
-Use this for development. SQLite and in-memory cache — no Redis or Postgres needed.
+No configuration needed. SQLite and in-memory cache are used by default — no Redis or Postgres required.
+
+**Prerequisites:** [Docker](https://docs.docker.com/get-docker/)
+
+```bash
+docker run -p 8000:8000 kiancode/nhl-fantasy-engine
+```
+
+That's it. On first run this will:
+- Apply all migrations automatically
+- Create a default admin user (`admin` / `admin`)
+
+API at `http://localhost:8000/api/` — Admin at `http://localhost:8000/admin/`
+
+> If you want to use a custom `.env`, mount it:
+> ```bash
+> docker run -p 8000:8000 -v $(pwd)/.env:/app/.env kiancode/nhl-fantasy-engine
+> ```
+
+### Ingest data (optional)
+
+```bash
+# Seed rosters
+docker run kiancode/nhl-fantasy-engine python manage.py ingest_games --seed-rosters
+
+# Ingest a specific date
+docker run kiancode/nhl-fantasy-engine python manage.py ingest_games --date 2024-01-15
+
+# Score it
+docker run kiancode/nhl-fantasy-engine python manage.py score_games --date 2024-01-15
+```
+
+### Running tests
+
+```bash
+docker run kiancode/nhl-fantasy-engine python manage.py test apps.core --verbosity=2
+```
+
+---
+
+## Running locally without Docker
 
 **Prerequisites:** Python 3.12+, [uv](https://docs.astral.sh/uv/getting-started/installation/)
 
@@ -55,22 +95,22 @@ uv sync
 cp .env.example .env
 ```
 
-Open `.env` and set at minimum:
-
-```
-SECRET_KEY=any-random-string-for-local-dev
-DEBUG=True
-DATABASE_URL=sqlite:///db.sqlite3
-CACHE_URL=locmemcache://
-```
-
 ### 3. Run migrations
 
 ```bash
 uv run python manage.py migrate
 ```
 
-### 4. Ingest NHL data
+### 4. Create an admin user
+
+```bash
+uv run python manage.py createsuperuser
+```
+
+Admin is at `http://localhost:8000/admin/`.
+
+### 5. Ingest NHL data
+
 
 Seed all 32 team rosters (run once):
 
@@ -84,13 +124,13 @@ Ingest games for a specific date:
 uv run python manage.py ingest_games --date 2024-01-15
 ```
 
-### 5. Score the ingested stats
+### 6. Score the ingested stats
 
 ```bash
 uv run python manage.py score_games --date 2024-01-15
 ```
 
-### 6. Start the dev server
+### 7. Start the dev server
 
 ```bash
 uv run python manage.py runserver
