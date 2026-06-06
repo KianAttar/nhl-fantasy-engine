@@ -42,31 +42,40 @@ No configuration needed. SQLite and in-memory cache are used by default — no R
 **Prerequisites:** [Docker](https://docs.docker.com/get-docker/)
 
 ```bash
-docker run -p 8000:8000 kiancode/nhl-fantasy-engine
+docker run --name nhl-fantasy -p 8000:8000 kiancode/nhl-fantasy-engine
 ```
 
 That's it. On first run this will:
 - Apply all migrations automatically
 - Create a default admin user (`admin` / `admin`)
+- Print the startup banner with all URLs and ingestion commands
 
 API at `http://localhost:8000/api/` — Admin at `http://localhost:8000/admin/`
 
 > If you want to use a custom `.env`, mount it:
 > ```bash
-> docker run -p 8000:8000 -v $(pwd)/.env:/app/.env kiancode/nhl-fantasy-engine
+> docker run --name nhl-fantasy -p 8000:8000 -v $(pwd)/.env:/app/.env kiancode/nhl-fantasy-engine
 > ```
 
-### Ingest data (optional)
+### Ingest data (in a second terminal)
+
+The database starts empty. Use `docker exec` against the running container to populate it.
 
 ```bash
-# Seed rosters
-docker run kiancode/nhl-fantasy-engine python manage.py ingest_games --seed-rosters
+# Seed all 32 team rosters (run once before ingesting)
+docker exec nhl-fantasy python manage.py ingest_games --seed-rosters
 
-# Ingest a specific date
-docker run kiancode/nhl-fantasy-engine python manage.py ingest_games --date 2024-01-15
+# Ingest today only + score
+docker exec nhl-fantasy sh -c "python manage.py ingest_games --days 1 && python manage.py score_games"
 
-# Score it
-docker run kiancode/nhl-fantasy-engine python manage.py score_games --date 2024-01-15
+# Ingest past week + score
+docker exec nhl-fantasy sh -c "python manage.py ingest_games --days 7 && python manage.py score_games"
+
+# Ingest past month + score
+docker exec nhl-fantasy sh -c "python manage.py ingest_games --days 30 && python manage.py score_games"
+
+# Ingest past 3 months + score
+docker exec nhl-fantasy sh -c "python manage.py ingest_games --days 90 && python manage.py score_games"
 ```
 
 ### Running tests
