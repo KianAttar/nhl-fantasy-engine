@@ -10,6 +10,9 @@ fi
 # Run migrations
 python manage.py migrate --noinput
 
+# Create the DB cache table (no-op if it already exists)
+python manage.py createcachetable --no-color 2>/dev/null || true
+
 # Create default admin only when DEBUG=True (never in production)
 python manage.py shell -c "
 from django.conf import settings
