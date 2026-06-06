@@ -1,13 +1,17 @@
 from datetime import datetime
 
+from django.core.cache import cache
 from django.db.models import FloatField, Q, QuerySet, Sum
 from django.db.models.functions import Coalesce, Round
 from rest_framework.exceptions import ValidationError
 from rest_framework.generics import ListAPIView, RetrieveAPIView
 from rest_framework.pagination import CursorPagination
+from rest_framework.response import Response
 
 from apps.core.models import Player
 from apps.core.serializers import LeaderboardEntrySerializer, PlayerStatsSerializer
+
+LEADERBOARD_CACHE_TTL = 60 * 60 * 24  # 24h — invalidated by ingestion before expiry
 
 
 class LeaderboardPagination(CursorPagination):
@@ -30,6 +34,25 @@ class LeaderboardView(ListAPIView):
     """
     serializer_class = LeaderboardEntrySerializer
     pagination_class = LeaderboardPagination
+
+    def list(self, request, *args, **kwargs):  # type: ignore[override]
+        # Only cache the first page — cursor-paginated subsequent pages are fast
+        # since they use indexed ordering and don't repeat the aggregation work.
+        cursor = request.GET.get("cursor")
+        date_str = request.GET.get("date", "all")
+        cache_key = f"leaderboard:{date_str}"
+
+        if not cursor:
+            cached = cache.get(cache_key)
+            if cached is not None:
+                return Response(cached)
+
+        response = super().list(request, *args, **kwargs)
+
+        if not cursor:
+            cache.set(cache_key, response.data, timeout=LEADERBOARD_CACHE_TTL)
+
+        return response
 
     def get_queryset(self) -> QuerySet:  # type: ignore[override]
         date_str = self.request.GET.get("date")

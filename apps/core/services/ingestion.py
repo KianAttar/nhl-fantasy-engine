@@ -1,6 +1,8 @@
 import logging
 from datetime import date
 
+from django.core.cache import cache
+
 from apps.core.models import Game, GoalieStat, Player, SkaterStat, Team
 from apps.core.services.nhl_client import NHLClient, NHL_TEAMS
 
@@ -83,6 +85,11 @@ def ingest_date(client: NHLClient, target_date: date) -> dict:
             total_goalie_stats += goalie_count
         except Exception:
             logger.exception("Failed to ingest game %d", game_id)
+
+    # Invalidate leaderboard cache for this date and all-time so next request
+    # reflects the newly ingested data.
+    cache.delete(f"leaderboard:{date_str}")
+    cache.delete("leaderboard:all")
 
     return {
         "games": len(completed),

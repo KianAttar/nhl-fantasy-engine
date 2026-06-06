@@ -7,6 +7,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 env = environ.Env(
     DEBUG=(bool, False),
     ALLOWED_HOSTS=(list, []),
+    CACHE_URL=(str, "locmemcache://"),
 )
 environ.Env.read_env(BASE_DIR / ".env")
 
@@ -61,6 +62,9 @@ WSGI_APPLICATION = "config.wsgi.application"
 
 # DATABASE_URL in .env drives this — sqlite for local, postgres in production
 DATABASES = {"default": env.db()}
+
+# CACHE_URL in .env drives this — locmemcache for local dev, redis in production
+CACHES = {"default": env.cache("CACHE_URL")}
 
 AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
